@@ -32,7 +32,7 @@ class _BaseHomeState extends State<BaseHome> {
       setState(() {
         recentPerangkats = data;
         // Urutkan dari ID terbesar (terbaru) ke terkecil
-        recentPerangkats.sort((a, b) => b.id.compareTo(a.id)); 
+        recentPerangkats.sort((a, b) => b.id.compareTo(a.id));
         _isLoading = false;
       });
     } catch (error) {
@@ -52,7 +52,7 @@ class _BaseHomeState extends State<BaseHome> {
           SizedBox(height: 30),
           notesHistory(), // Widget List Catatan Terakhir
           SizedBox(height: 40),
-          
+
           // --- Bagian Tombol Navigasi Bawah ---
           Padding(
             padding: const EdgeInsets.only(left: 40, right: 40),
@@ -60,21 +60,25 @@ class _BaseHomeState extends State<BaseHome> {
               height: 534 / 2,
               width: 10,
               decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                      begin: AlignmentGeometry.topLeft,
-                      end: AlignmentGeometry.bottomRight,
-                      colors: [
-                        Color.fromARGB(255, 148, 175, 255),
-                        Color.fromARGB(255, 208, 214, 233)
-                      ]),
-                  borderRadius: BorderRadius.circular(39)),
+                gradient: LinearGradient(
+                  begin: AlignmentGeometry.topLeft,
+                  end: AlignmentGeometry.bottomRight,
+                  colors: [
+                    Color.fromARGB(255, 148, 175, 255),
+                    Color.fromARGB(255, 208, 214, 233),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(39),
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   GestureDetector(
                     onTap: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => QrScan()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => QrScan()),
+                      );
                     },
                     child: Padding(
                       padding: const EdgeInsets.only(left: 10, right: 10),
@@ -92,25 +96,29 @@ class _BaseHomeState extends State<BaseHome> {
                                 Text(
                                   "Scan",
                                   style: TextStyle(
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.w600,
-                                      height: 1,
-                                      color: Colors.white),
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1,
+                                    color: Colors.white,
+                                  ),
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.only(top: 10),
                                   child: Text(
                                     "QR",
                                     style: TextStyle(
-                                        fontSize: 80 - 23,
-                                        fontWeight: FontWeight.bold,
-                                        height: 0,
-                                        color: Colors.white),
+                                      fontSize: 80 - 23,
+                                      fontWeight: FontWeight.bold,
+                                      height: 0,
+                                      color: Colors.white,
+                                    ),
                                   ),
-                                )
+                                ),
                               ],
                             ),
-                            SvgPicture.asset("asset/icons/qr-reader-svgrepo-com.svg"),
+                            SvgPicture.asset(
+                              "asset/icons/qr-reader-svgrepo-com.svg",
+                            ),
                           ],
                         ),
                       ),
@@ -118,11 +126,17 @@ class _BaseHomeState extends State<BaseHome> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => Riwayatpage()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => Riwayatpage()),
+                      );
                     },
                     child: Padding(
-                      padding: const EdgeInsets.only(left: 10, right: 10, top: 10),
+                      padding: const EdgeInsets.only(
+                        left: 10,
+                        right: 10,
+                        top: 10,
+                      ),
                       child: Container(
                         height: 240 / 2,
                         decoration: BoxDecoration(
@@ -137,25 +151,30 @@ class _BaseHomeState extends State<BaseHome> {
                                 Text(
                                   "Riwayat",
                                   style: TextStyle(
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.w600,
-                                      height: 1,
-                                      color: Colors.white),
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1,
+                                    color: Colors.white,
+                                  ),
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.only(top: 15),
                                   child: Text(
                                     "Catatan",
                                     style: TextStyle(
-                                        fontSize: 30,
-                                        fontWeight: FontWeight.bold,
-                                        height: 0,
-                                        color: Colors.white),
+                                      fontSize: 30,
+                                      fontWeight: FontWeight.bold,
+                                      height: 0,
+                                      color: Colors.white,
+                                    ),
                                   ),
-                                )
+                                ),
                               ],
                             ),
-                            SvgPicture.asset("asset/icons/history-svgrepo-com (1).svg", width: 120,),
+                            SvgPicture.asset(
+                              "asset/icons/history-svgrepo-com (1).svg",
+                              width: 120,
+                            ),
                           ],
                         ),
                       ),
@@ -164,7 +183,7 @@ class _BaseHomeState extends State<BaseHome> {
                 ],
               ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -187,16 +206,17 @@ class _BaseHomeState extends State<BaseHome> {
                   width: 370,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                        begin: AlignmentGeometry.topCenter,
-                        end: AlignmentGeometry.bottomRight,
-                        colors: [
-                          Color.fromARGB(255, 184, 202, 255),
-                          Color.fromARGB(255, 110, 121, 153)
-                        ]),
+                      begin: AlignmentGeometry.topCenter,
+                      end: AlignmentGeometry.bottomRight,
+                      colors: [
+                        Color.fromARGB(255, 184, 202, 255),
+                        Color.fromARGB(255, 110, 121, 153),
+                      ],
+                    ),
                     borderRadius: BorderRadius.circular(26),
                   ),
                 ),
-                
+
                 // Foreground Card (Putih) - Tempat List
                 Container(
                   height: 400 - 12,
@@ -207,94 +227,105 @@ class _BaseHomeState extends State<BaseHome> {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.only(
-                        top: 35, left: 10, right: 10, bottom: 10),
+                      top: 35,
+                      left: 10,
+                      right: 10,
+                      bottom: 10,
+                    ),
                     child: _isLoading
                         ? Center(child: CircularProgressIndicator())
                         : recentPerangkats.isEmpty
-                            ? Center(child: Text("Belum ada catatan terbaru"))
-                            : ListView.separated(
-                                itemBuilder: (context, index) {
-                                  // --- ITEM LIST (Style Riwayat) ---
-                                  return Container(
-                                    height: 60,
-                                    decoration: BoxDecoration(
-                                      // Warna background sesuai RiwayatPage
-                                      color: Color.fromARGB(99, 144, 172, 255),
-                                      borderRadius: BorderRadius.circular(26),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(left: 10, right: 10),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.start,
-                                        children: [
-                                          // Icon Honey Pancakes
-                                          SvgPicture.asset(
-                                            "asset/icons/router-5-svgrepo-com.svg",
-                                            width: 60, // Sedikit diperkecil agar muat di kotak kecil
-                                          ),
-                                          SizedBox(width: 15),
-                                          
-                                          // Kolom Teks
-                                          Expanded(
-                                            child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                // Nama Perangkat (AutoSizeText)
-                                                AutoSizeText(
-                                                  recentPerangkats[index].nama,
-                                                  maxLines: 1,
-                                                  minFontSize: 10,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: TextStyle(
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                
-                                                // Detail (Tanggal | Gedung | Port)
-                                                Text(
-                                                  recentPerangkats[index].tanggal +
-                                                      " | " +
-                                                      recentPerangkats[index].gedung +
-                                                      " | " +
-                                                      recentPerangkats[index].port.toString(),
-                                                  style: TextStyle(fontSize: 12),
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                )
-                                              ],
-                                            ),
-                                          )
-                                        ],
+                        ? Center(child: Text("Belum ada catatan terbaru"))
+                        : ListView.separated(
+                            itemBuilder: (context, index) {
+                              // --- ITEM LIST (Style Riwayat) ---
+                              return Container(
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  // Warna background sesuai RiwayatPage
+                                  color: Color.fromARGB(99, 144, 172, 255),
+                                  borderRadius: BorderRadius.circular(26),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 10,
+                                    right: 10,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      // Icon Honey Pancakes
+                                      SvgPicture.asset(
+                                        "asset/icons/router-5-svgrepo-com.svg",
+                                        width:
+                                            60, // Sedikit diperkecil agar muat di kotak kecil
                                       ),
-                                    ),
-                                  );
-                                },
-                                separatorBuilder: (context, index) =>
-                                    SizedBox(height: 12),
-                                itemCount: recentPerangkats.length),
+                                      SizedBox(width: 15),
+
+                                      // Kolom Teks
+                                      Expanded(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            // Nama Perangkat (AutoSizeText)
+                                            AutoSizeText(
+                                              recentPerangkats[index].nama,
+                                              maxLines: 1,
+                                              minFontSize: 10,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+
+                                            // Detail (Tanggal | Gedung | Port)
+                                            Text(
+                                              recentPerangkats[index].tanggal +
+                                                  " | " +
+                                                  recentPerangkats[index]
+                                                      .gedung +
+                                                  " | " +
+                                                  recentPerangkats[index].port
+                                                      .toString(),
+                                              style: TextStyle(fontSize: 12),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                            separatorBuilder: (context, index) =>
+                                SizedBox(height: 12),
+                            itemCount: recentPerangkats.length,
+                          ),
                   ),
                 ),
               ],
             ),
           ),
-          
+
           // Header "Catatan Terakhir"
           Container(
             height: 150 / 2,
             width: 304 / 2,
             decoration: BoxDecoration(
-                color: Color.fromARGB(255, 184, 202, 255),
-                borderRadius: BorderRadius.circular(17)),
+              color: Color.fromARGB(255, 184, 202, 255),
+              borderRadius: BorderRadius.circular(17),
+            ),
             child: Center(
               child: Text(
                 "Catatan\nTerakhir",
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 52 / 2,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 52 / 2, fontWeight: FontWeight.bold),
               ),
             ),
           ),

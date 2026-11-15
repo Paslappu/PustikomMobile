@@ -86,8 +86,14 @@ class _CatatanState extends State<Catatan> {
                   children: [
                     GestureDetector(
                       onTap: () async {
-                        if ((nama == null || tanggal == null || gedung == null || port == null) ||
-                            (nama == "" || tanggal == "" || gedung == "" || port == "")) {
+                        if ((nama == null ||
+                                tanggal == null ||
+                                gedung == null ||
+                                port == null) ||
+                            (nama == "" ||
+                                tanggal == "" ||
+                                gedung == "" ||
+                                port == "")) {
                           showDialog(
                             context: context,
                             builder: (context) => AlertDialog(
@@ -97,15 +103,15 @@ class _CatatanState extends State<Catatan> {
                           );
                           return;
                         }
-                        
+
                         // databaseService.addPerangkat(nama!, tanggal!, gedung!, port!);
-                        
+
                         // Clear text fields
                         _namaController.clear();
                         _tanggalController.clear();
                         _gedungController.clear();
                         _portController.clear();
-                        
+
                         // Refresh the UI
                         setState(() {
                           _refreshKey++;
@@ -122,13 +128,11 @@ class _CatatanState extends State<Catatan> {
                         child: Center(child: Text("Add Device")),
                       ),
                     ),
-                    SizedBox(width: 10,),
+                    SizedBox(width: 10),
                     GestureDetector(
                       onTap: () async {
                         databaseService.deletePerangkat(idRemove);
-                        setState(() {
-                          
-                        });
+                        setState(() {});
                       },
                       child: Container(
                         height: 50,
@@ -141,18 +145,18 @@ class _CatatanState extends State<Catatan> {
                       width: 20,
                       child: TextField(
                         keyboardType: TextInputType.number,
-                        onChanged: (value) { 
-                          idRemove=int.tryParse(value)??0;
-                        }
-                        
+                        onChanged: (value) {
+                          idRemove = int.tryParse(value) ?? 0;
+                        },
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
             ),
             SizedBox(height: 20),
-            Expanded( // Wrap with Expanded
+            Expanded(
+              // Wrap with Expanded
               child: databaseList(),
             ),
           ],
@@ -170,15 +174,15 @@ class _CatatanState extends State<Catatan> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());
         }
-        
+
         if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
         }
-        
+
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return Center(child: Text('No devices found'));
         }
-        
+
         return Container(
           color: const Color.fromARGB(28, 33, 149, 243),
           child: ListView.separated(
@@ -189,8 +193,7 @@ class _CatatanState extends State<Catatan> {
             itemBuilder: (context, index) {
               PerangkatModel perangkat = snapshot.data![index];
               return GestureDetector(
-                onTap: () {
-                },
+                onTap: () {},
                 child: Container(
                   height: 40,
                   padding: EdgeInsets.only(left: 10, right: 10),

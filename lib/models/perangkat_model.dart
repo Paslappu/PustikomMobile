@@ -1,5 +1,3 @@
-
-
 class PerangkatModel {
   int id;
   String nama;

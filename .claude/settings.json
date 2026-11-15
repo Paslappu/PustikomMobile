@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze*)",
+      "Bash(flutter test*)",
+      "Bash(flutter pub get)",
+      "Bash(flutter pub add*)",
+      "Bash(flutter pub outdated*)",
+      "Bash(flutter doctor*)",
+      "Bash(flutter devices)",
+      "Bash(dart format*)",
+      "Bash(dart analyze*)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const j=JSON.parse(d);const f=j.tool_input&&j.tool_input.file_path;if(f&&/\\.dart$/.test(f)&&!/[\\\\/](tes|Backup)[\\\\/]/.test(f)){require('child_process').execSync('dart format \\\"'+f+'\\\"',{stdio:'ignore'});}}catch(e){}})\""
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:qrscan/pages/rincian_perangkat.dart'; 
+import 'package:qrscan/pages/rincian_perangkat.dart';
 
 class TransitionScrap extends StatefulWidget {
   final String url;
@@ -91,11 +91,13 @@ class _TransitionScrapState extends State<TransitionScrap> {
         return JSON.stringify(result);
       })(); """;
 
-      var response = await webViewController?.evaluateJavascript(source: jsCode);
+      var response = await webViewController?.evaluateJavascript(
+        source: jsCode,
+      );
 
       if (response != null) {
         Map<String, dynamic> data = jsonDecode(response);
-        
+
         _navigateToDetails(data);
       }
     } catch (e) {
@@ -105,9 +107,10 @@ class _TransitionScrapState extends State<TransitionScrap> {
 
   void _navigateToDetails(Map<String, dynamic> data) {
     if (!mounted) return;
-    String finalName = (widget.newPerangkatName != null && widget.newPerangkatName!.isNotEmpty)
-      ? widget.newPerangkatName!
-      : (data['deviceName'] ?? "");
+    String finalName =
+        (widget.newPerangkatName != null && widget.newPerangkatName!.isNotEmpty)
+        ? widget.newPerangkatName!
+        : (data['deviceName'] ?? "");
     print("Status Length: ${data['status'].length} + ${data['status']}");
     Navigator.pushReplacement(
       context,
@@ -120,7 +123,7 @@ class _TransitionScrapState extends State<TransitionScrap> {
           scrapedMapUrl: data['mapUrl'],
           scrapedHistory: data['history'],
           scrapedModelUrl: data['model3dUrl'],
-          
+
           status: data['status'],
           originalUrl: widget.url,
         ),
@@ -180,10 +183,14 @@ class _TransitionScrapState extends State<TransitionScrap> {
                                 ),
                                 const SizedBox(height: 20),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8.0,
+                                  ),
                                   child: Text(
                                     statusText,
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                     textAlign: TextAlign.center,
                                   ),
                                 ),

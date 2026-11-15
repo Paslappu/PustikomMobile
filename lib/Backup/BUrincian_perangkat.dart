@@ -51,7 +51,7 @@
 //     }
 //     isEdit = widget.isEditing;
 //   }
-  
+
 //   @override
 //   void dispose() {
 //     // Clean up controllers
@@ -68,14 +68,14 @@
 //       backgroundColor: Color.fromARGB(255, 219, 229, 255),
 //       body: Stack(
 //         children: [
-          
+
 //           ListView(
 //             children: [
 //               Stack(
 //                 children: [
 //                   gradientBG(context),
 //                   perangkatViewer(context),
-                  
+
 //                   Padding(
 //                     padding: const EdgeInsets.only(top: 90, left: 40, right: 40),
 //                     child: Column(
@@ -175,7 +175,7 @@
 //                   ),
 //                 ],
 //               ),
-              
+
 //             ],
 //           ),
 //           GestureDetector(
@@ -196,7 +196,7 @@
 //                   )
 //                 ),
 //                 child: SvgPicture.asset("asset/icons/Arrow - Left 2.svg", width: 60),
-                
+
 //               ),
 //             ),
 //           ),
@@ -214,7 +214,7 @@
 //                       _tanggalController.text.isNotEmpty &&
 //                       _gedungController.text.isNotEmpty &&
 //                       _portController.text.isNotEmpty) {
-                    
+
 //                     // 2. SHOW CONFIRMATION DIALOG
 //                     showDialog(
 //                       context: context,
@@ -315,7 +315,7 @@
 //                         },
 //                         child: Container(
 //                           height: 60,
-                          
+
 //                           width: MediaQuery.of(context).size.width/3,
 //                           decoration: BoxDecoration(
 //                             color: const Color.fromARGB(255, 7, 226, 255),
@@ -330,7 +330,7 @@
 //                               "Lihat Web",
 //                               style: TextStyle(
 //                                 fontSize: 20,
-                                
+
 //                               ),
 //                             ),
 //                           ),
@@ -377,7 +377,7 @@
 //                   },
 //                   child: Container(
 //                     height: 60,
-                    
+
 //                     width: MediaQuery.of(context).size.width/3,
 //                     decoration: BoxDecoration(
 //                       color: const Color.fromARGB(255, 7, 226, 255),
@@ -392,7 +392,7 @@
 //                         "Lihat Web",
 //                         style: TextStyle(
 //                           fontSize: 20,
-                          
+
 //                         ),
 //                       ),
 //                     ),
@@ -409,12 +409,12 @@
 //                   onTap: () {
 //                     isEdit = true;
 //                     setState(() {
-                      
+
 //                     });
 //                   },
 //                   child: Container(
 //                     height: 60,
-                    
+
 //                     width: MediaQuery.of(context).size.width/3,
 //                     decoration: BoxDecoration(
 //                       color: Colors.amber,
@@ -429,7 +429,7 @@
 //                         "Edit",
 //                         style: TextStyle(
 //                           fontSize: 20,
-                          
+
 //                         ),
 //                       ),
 //                     ),
@@ -443,18 +443,18 @@
 
 //   FutureBuilder<List<PerangkatModel>> listDataPerangkat(){
 //     return FutureBuilder(
-//       future: databaseService.getPerangkat(), 
-      
+//       future: databaseService.getPerangkat(),
+
 //       builder: (context, snapshot){
-        
+
 //         if (snapshot.connectionState == ConnectionState.waiting) {
 //           return Center(child: CircularProgressIndicator());
 //         }
-        
+
 //         if (snapshot.hasError) {
 //           return Center(child: Text('Error: ${snapshot.error}'));
 //         }
-        
+
 //         if (widget.idPerangkat == null) {
 //           return Container(
 //             child: Column(
@@ -575,7 +575,7 @@
 //           height: MediaQuery.of(context).size.height/1.2,
 //           padding: EdgeInsets.only(top: 80, left: 10, right: 10),
 //           child: Container(
-            
+
 //             decoration: BoxDecoration(
 //             gradient: LinearGradient(
 //               begin: AlignmentGeometry.center,
@@ -631,9 +631,9 @@
 //                         if (snapshot.connectionState == ConnectionState.waiting) {
 //                           return Text("Loading...", style: TextStyle(fontSize: 15));
 //                         }
-                        
+
 //                         String displayName = "Unknown Device";
-                        
+
 //                         if (snapshot.hasData) {
 //                           // Cari perangkat yang ID-nya cocok dengan widget.idPerangkat
 //                           var matches = snapshot.data!.where((p) => p.id == widget.idPerangkat);
