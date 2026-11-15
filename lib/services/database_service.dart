@@ -6,7 +6,6 @@ import 'package:qrscan/models/outbox_item.dart';
 import 'package:qrscan/models/perangkat_model.dart';
 import 'package:qrscan/services/outbox_store.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:sqflite/sqlite_api.dart';
 import 'dart:io';
 
 class DatabaseService implements OutboxStore {
@@ -133,49 +132,6 @@ class DatabaseService implements OutboxStore {
     );
   }
 
-  Future<void> addPerangkat(
-    String name,
-    String tanggal,
-    String gedung,
-    String port,
-    String url,
-    String location,
-    String coordinate,
-  ) async {
-    final db = await database;
-    await db.insert(tableName, {
-      nameTableName: name,
-      tanggalTableName: tanggal,
-      gedungTableName: gedung,
-      portTableName: int.tryParse(port) ?? 0,
-      urlTableName: url,
-      locationTableName: location,
-      coordinateTableName: coordinate,
-    });
-  }
-
-  Future<PerangkatModel?> getPerangkatById(int id) async {
-    final db = await database;
-    final result = await db.query(
-      tableName,
-      where: '$idTableName = ?',
-      whereArgs: [id],
-      limit: 1,
-    );
-    if (result.isEmpty) return null;
-    final e = result.first;
-    return PerangkatModel(
-      id: e[idTableName] as int,
-      nama: e[nameTableName] as String,
-      tanggal: e[tanggalTableName] as String,
-      gedung: e[gedungTableName] as String,
-      port: e[portTableName] as int,
-      url: e[urlTableName] as String,
-      location: e[locationTableName] as String,
-      coordinate: e[coordinateTableName] as String,
-    );
-  }
-
   Future<List<PerangkatModel>> getPerangkat() async {
     final db = await database;
     final data = await db.query(tableName);
@@ -199,24 +155,6 @@ class DatabaseService implements OutboxStore {
   Future<void> deletePerangkat(int id) async {
     final db = await database;
     await db.delete(tableName, where: "id = ?", whereArgs: [id]);
-  }
-
-  Future<int> updatePerangkat(PerangkatModel perangkat) async {
-    final db = await database;
-    return db.update(
-      tableName,
-      {
-        nameTableName: perangkat.nama,
-        tanggalTableName: perangkat.tanggal,
-        gedungTableName: perangkat.gedung,
-        portTableName: perangkat.port,
-        urlTableName: perangkat.url,
-        locationTableName: perangkat.location,
-        coordinateTableName: perangkat.coordinate,
-      },
-      where: '$idTableName = ?',
-      whereArgs: [perangkat.id],
-    );
   }
 
   // ---- Offline report queue (OutboxStore) ----
@@ -371,7 +309,9 @@ class DatabaseService implements OutboxStore {
       File(path)
         ..createSync(recursive: true)
         ..writeAsBytesSync(fileBytes);
-      await Share.shareXFiles([XFile(path)], text: 'Laporan Data Perangkat');
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(path)], text: 'Laporan Data Perangkat'),
+      );
     }
   }
 }

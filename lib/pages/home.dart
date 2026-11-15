@@ -1,470 +1,454 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:qrscan/models/category_model.dart';
-import 'package:qrscan/models/diet_models.dart';
-import 'package:qrscan/models/popular_diets.dart';
-import 'package:qrscan/pages/base.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:qrscan/config/app_config.dart';
+import 'package:qrscan/models/outbox_item.dart';
+import 'package:qrscan/models/report_model.dart';
+import 'package:qrscan/pages/antrean_page.dart';
+import 'package:qrscan/pages/base.dart';
+import 'package:qrscan/pages/devices_page.dart';
+import 'package:qrscan/pages/report_detail_page.dart';
+import 'package:qrscan/pages/report_form_page.dart';
+import 'package:qrscan/services/api_exception.dart';
+import 'package:qrscan/services/app_scope.dart';
+import 'package:qrscan/services/app_services.dart';
+import 'package:qrscan/services/auth_scope.dart';
+import 'package:qrscan/theme/app_tokens.dart';
+import 'package:qrscan/widgets/app_button.dart';
+import 'package:qrscan/widgets/app_card.dart';
+import 'package:qrscan/widgets/empty_state.dart';
+import 'package:qrscan/widgets/report_tile.dart';
+import 'package:qrscan/widgets/section_header.dart';
+import 'package:qrscan/widgets/user_avatar.dart';
+
+/// "Beranda" tab: greeting, scan shortcut, queue and draft notices, report
+/// count and the latest reports.
 class HomePage extends StatefulWidget {
-  HomePage({super.key});
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  List<CategoryModel> categories = [];
+  static const int _recentCount = 5;
 
-  List<DietModels> diets = [];
+  AppServices? _services;
+  List<DeviceReport> _recent = const [];
+  int? _total;
+  bool _loading = true;
+  String? _error;
+  int _requestId = 0;
 
-  List<PopularDiets> popDiets = [];
-
-  void getLists() {
-    categories = CategoryModel.getCategories();
-    diets = DietModels.getDiets();
-    popDiets = PopularDiets.getPopularDiets();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final services = AppScope.of(context);
+    if (!identical(services, _services)) {
+      _services?.reports.revision.removeListener(_onRevision);
+      _services = services;
+      services.reports.revision.addListener(_onRevision);
+      unawaited(_fetch());
+    }
   }
 
   @override
-  void initState() {
-    // TODO: implement initS  tate
-    getLists();
-    super.initState();
+  void dispose() {
+    _services?.reports.revision.removeListener(_onRevision);
+    super.dispose();
+  }
+
+  void _onRevision() => unawaited(_fetch());
+
+  Future<void> _fetch() async {
+    final services = _services;
+    if (services == null) return;
+    final id = ++_requestId;
+    try {
+      final page = await services.reports.list(
+        const ReportFilter(),
+        perPage: _recentCount,
+      );
+      if (!mounted || id != _requestId) return;
+      setState(() {
+        _recent = page.items;
+        _total = page.total;
+        _error = null;
+        _loading = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted || id != _requestId) return;
+      setState(() {
+        _error = e.message;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted || id != _requestId) return;
+      setState(() {
+        _error = 'Terjadi kesalahan. Coba lagi.';
+        _loading = false;
+      });
+    }
+  }
+
+  void _retry() {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    unawaited(_fetch());
+  }
+
+  void _push(Widget page) {
+    Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => page));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: topBar(),
-      backgroundColor: Colors.white,
-      body: ListView(
+    final services = _services!;
+    final user = AuthScope.of(context).user;
+    final isAdmin = user?.isAdmin ?? false;
+    final fullName = user?.name.trim() ?? '';
+    final firstName = fullName.isEmpty
+        ? 'Pengguna'
+        : fullName.split(RegExp(r'\s+')).first;
+
+    return RefreshIndicator(
+      onRefresh: _fetch,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
         children: [
-          searchField(),
-          const SizedBox(height: 40),
-          categoriesSection(),
-          const SizedBox(height: 40),
-          dietSection(),
-          const SizedBox(height: 40),
-          popularDietSection(),
-          SizedBox(height: 40),
+          _HeaderBand(
+            fullName: fullName.isEmpty ? 'Pengguna' : fullName,
+            greeting: 'Halo, $firstName',
+            onScan: () => services.shellTab.value = BaseHome.scanTab,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ListenableBuilder(
+                  listenable: services.outbox,
+                  builder: (context, _) => _OutboxNotices(
+                    services: services,
+                    onOpenQueue: () => _push(const AntreanPage()),
+                    onOpenDraft: (uuid) => _push(ReportFormPage(uuid: uuid)),
+                  ),
+                ),
+                _StatCard(
+                  label: isAdmin ? 'Total laporan' : 'Laporan saya',
+                  value: _total == null ? '-' : '$_total',
+                ),
+                const SizedBox(height: 16),
+                SectionHeader(
+                  title: 'Laporan Terakhir',
+                  actionLabel: 'Lihat semua',
+                  onAction: () => services.shellTab.value = BaseHome.reportsTab,
+                ),
+                const SizedBox(height: 8),
+                _buildRecent(isAdmin),
+                const SizedBox(height: 16),
+                AppButton(
+                  label: 'Daftar Perangkat',
+                  icon: Icons.devices_other_outlined,
+                  variant: AppButtonVariant.secondary,
+                  onPressed: () => _push(const DevicesPage()),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Column popularDietSection() {
+  Widget _buildRecent(bool isAdmin) {
+    if (_loading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 32),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_error != null) {
+      return EmptyState(
+        icon: Icons.error_outline,
+        title: 'Gagal memuat laporan',
+        message: _error,
+        actionLabel: 'Coba Lagi',
+        onAction: _retry,
+      );
+    }
+    if (_recent.isEmpty) {
+      return const EmptyState(
+        icon: Icons.assignment_outlined,
+        title: 'Belum ada laporan',
+        message: 'Pindai QR perangkat untuk membuat laporan pertama.',
+      );
+    }
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: const EdgeInsets.only(left: 20),
-          child: Text(
-            'Popular Diets',
-            style: TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.w500,
-              fontSize: 20,
+        for (final report in _recent)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: ReportTile(
+              report: report,
+              showUser: isAdmin,
+              onTap: () => _push(ReportDetailPage(id: report.id)),
             ),
           ),
-        ),
-        SizedBox(height: 20),
-        ListView.separated(
-          padding: EdgeInsets.only(left: 20, right: 20),
-          itemBuilder: (context, index) {
-            return Container(
-              height: 115,
-              padding: EdgeInsets.only(left: 20, right: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
-                children: [
-                  SvgPicture.asset(
-                    popDiets[index].iconPath,
-                    width: 60,
-                    height: 60,
-                  ),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        popDiets[index].name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.black,
-                        ),
-                      ),
-                      Text(
-                        popDiets[index].level +
-                            " | " +
-                            popDiets[index].calories +
-                            " | " +
-                            popDiets[index].duration,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w300,
-                          color: const Color.fromARGB(255, 48, 48, 48),
-                        ),
-                      ),
-                    ],
-                  ),
-                  GestureDetector(
-                    onTapDown: (_) {
-                      setState(() {
-                        popDiets[index].boxIsSelected =
-                            true; // Instant change when pressed
-                      });
-                    },
-                    onTapUp: (_) {
-                      setState(() {
-                        popDiets[index].boxIsSelected =
-                            false; // Instant revert when released
-                      });
-                    },
-                    onTapCancel: () {
-                      setState(() {
-                        popDiets[index].boxIsSelected =
-                            false; // Instant revert if cancelled
-                      });
-                    },
-                    child: SvgPicture.asset(
-                      'asset/icons/button.svg',
-                      height: 30,
-                      width: 30,
-                    ),
-                  ),
-                ],
-              ),
-              decoration: BoxDecoration(
-                color: popDiets[index].boxIsSelected
-                    ? Colors.amberAccent
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: popDiets[index].boxIsSelected
-                    ? [
-                        BoxShadow(
-                          blurRadius: 40,
-                          color: Colors.black.withOpacity(0.3),
-                          offset: Offset(0, 10),
-                          spreadRadius: 0,
-                        ),
-                      ]
-                    : [
-                        BoxShadow(
-                          blurRadius: 40,
-                          color: Colors.transparent,
-                          offset: Offset(0, 10),
-                          spreadRadius: 0,
-                        ),
-                      ],
-              ),
-            );
-          },
-          separatorBuilder: (context, index) => SizedBox(height: 20),
-          itemCount: popDiets.length,
-          shrinkWrap: true,
-        ),
       ],
     );
   }
+}
 
-  Column dietSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 20),
-          child: Text(
-            'Recomendation\nFor Diet',
-            style: TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.w500,
-              fontSize: 20,
-            ),
-          ),
+class _HeaderBand extends StatelessWidget {
+  const _HeaderBand({
+    required this.fullName,
+    required this.greeting,
+    required this.onScan,
+  });
+
+  final String fullName;
+  final String greeting;
+  final VoidCallback onScan;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.colors;
+    final text = context.text;
+    return Container(
+      decoration: BoxDecoration(
+        color: scheme.primary,
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(context.tokens.radiusXl),
         ),
-        SizedBox(height: 20),
-        Container(
-          height: 240,
-          color: const Color.fromARGB(33, 33, 149, 243),
-          child: ListView.separated(
-            padding: EdgeInsets.only(left: 20, right: 20, top: 10, bottom: 10),
-            itemBuilder: (context, index) {
-              return Container(
-                width: 210,
-                decoration: BoxDecoration(
-                  color: diets[index].boxColor.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    SvgPicture.asset(
-                      diets[index].iconPath,
-                      width: 65,
-                      height: 65,
-                    ),
-                    Column(
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  UserAvatar(name: fullName),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          diets[index].name,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w400,
-                            color: Colors.black,
-                            fontSize: 16,
+                          greeting,
+                          style: text.titleMedium?.copyWith(
+                            color: scheme.onPrimary,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          diets[index].level +
-                              ' | ' +
-                              diets[index].calories +
-                              ' | ' +
-                              diets[index].duration,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w400,
-                            color: const Color.fromARGB(255, 63, 63, 63),
-                            fontSize: 13,
+                          AppConfig.appFullName,
+                          style: text.bodySmall?.copyWith(
+                            color: scheme.onPrimary.withValues(alpha: 0.8),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.qr_code_scanner, color: scheme.primary),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Pindai QR Perangkat',
+                            style: text.titleMedium,
                           ),
                         ),
                       ],
                     ),
-
-                    GestureDetector(
-                      onTapDown: (_) {
-                        setState(() {
-                          diets[index].viewIsSelected =
-                              true; // Instant change when pressed
-                        });
-                      },
-                      onTapUp: (_) {
-                        setState(() {
-                          diets[index].viewIsSelected =
-                              false; // Instant revert when released
-                        });
-                      },
-                      onTapCancel: () {
-                        setState(() {
-                          diets[index].viewIsSelected =
-                              false; // Instant revert if cancelled
-                        });
-                      },
-                      child: Container(
-                        height: 30,
-                        width: 100,
-                        child: Center(
-                          child: Text(
-                            "Lihat",
-                            style: TextStyle(
-                              color: diets[index].viewIsSelected
-                                  ? const Color.fromARGB(255, 0, 0, 0)
-                                  : Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          gradient: LinearGradient(
-                            colors: [
-                              diets[index].viewIsSelected
-                                  ? Colors.transparent
-                                  : Color.fromARGB(255, 59, 240, 113),
-                              diets[index].viewIsSelected
-                                  ? Colors.transparent
-                                  : Colors.amber,
-                            ],
-                          ),
-                        ),
-                      ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Arahkan kamera ke kode QR pada perangkat.',
+                      style: text.bodySmall,
+                    ),
+                    const SizedBox(height: 12),
+                    AppButton(
+                      label: 'Mulai Pindai',
+                      icon: Icons.qr_code_scanner,
+                      onPressed: onScan,
                     ),
                   ],
                 ),
-              );
-            },
-            separatorBuilder: (context, index) => SizedBox(width: 25),
-            itemCount: diets.length,
-            scrollDirection: Axis.horizontal,
+              ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
+}
 
-  Column categoriesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 20),
-          child: Text(
-            'Kategori',
-            style: TextStyle(
-              color: const Color.fromARGB(255, 16, 22, 27),
-              fontSize: 20,
-              fontWeight: FontWeight.w500,
+class _StatCard extends StatelessWidget {
+  const _StatCard({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.colors;
+    return AppCard(
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: scheme.primaryContainer,
+              borderRadius: BorderRadius.circular(context.tokens.radiusMd),
+            ),
+            child: Icon(
+              Icons.assignment_outlined,
+              color: scheme.onPrimaryContainer,
             ),
           ),
+          const SizedBox(width: 12),
+          Expanded(child: Text(label, style: context.text.bodyMedium)),
+          Text(value, style: context.text.headlineSmall),
+        ],
+      ),
+    );
+  }
+}
+
+/// Banners for reports waiting to be sent and for unfinished drafts.
+class _OutboxNotices extends StatelessWidget {
+  const _OutboxNotices({
+    required this.services,
+    required this.onOpenQueue,
+    required this.onOpenDraft,
+  });
+
+  final AppServices services;
+  final VoidCallback onOpenQueue;
+  final ValueChanged<String> onOpenDraft;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = services.outbox;
+    final count = controller.badgeCount;
+    final blocked = controller.blockedByAuth;
+    final drafts = controller.drafts
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final tokens = context.tokens;
+
+    final banners = <Widget>[];
+    if (count > 0 || blocked) {
+      banners.add(
+        _NoticeCard(
+          background: tokens.infoContainer,
+          foreground: tokens.info,
+          icon: Icons.cloud_upload_outlined,
+          title: blocked && count == 0
+              ? 'Pengiriman laporan dijeda'
+              : '$count laporan menunggu dikirim',
+          actionLabel: 'Lihat Antrean',
+          onAction: onOpenQueue,
         ),
-        SizedBox(height: 20),
-        Container(
-          height: 120,
-          color: const Color.fromARGB(31, 24, 255, 255),
-          child: ListView.separated(
-            padding: EdgeInsets.only(left: 20, right: 20),
-            scrollDirection: Axis.horizontal,
-            itemCount: categories.length,
-            separatorBuilder: (context, index) => SizedBox(width: 10),
-            itemBuilder: (context, index) {
-              return Container(
-                width: 100,
-                decoration: BoxDecoration(
-                  color: categories[index].boxColor.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Container(
-                      width: 70,
-                      height: 70,
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 255, 255, 255),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: SvgPicture.asset(categories[index].iconPath),
-                      ),
-                    ),
-                    Text(
-                      categories[index].name,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w400,
-                        color: Colors.black,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+      );
+    }
+    if (drafts.isNotEmpty) {
+      final OutboxItem newest = drafts.first;
+      banners.add(
+        _NoticeCard(
+          background: tokens.warningContainer,
+          foreground: tokens.warning,
+          icon: Icons.edit_note,
+          title: 'Draf laporan belum selesai',
+          subtitle: drafts.length > 1
+              ? '${newest.deviceLabel} dan ${drafts.length - 1} draf lainnya'
+              : newest.deviceLabel,
+          actionLabel: 'Lanjutkan',
+          onAction: () => onOpenDraft(newest.uuid),
         ),
+      );
+    }
+    if (banners.isEmpty) return const SizedBox.shrink();
+    return Column(
+      children: [
+        for (final banner in banners)
+          Padding(padding: const EdgeInsets.only(bottom: 12), child: banner),
       ],
     );
   }
+}
 
-  Container searchField() {
-    return Container(
-      margin: EdgeInsets.only(top: 40, left: 20, right: 20),
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: const Color.fromARGB(40, 0, 0, 0),
-            blurRadius: 40,
-            spreadRadius: 0,
+class _NoticeCard extends StatelessWidget {
+  const _NoticeCard({
+    required this.background,
+    required this.foreground,
+    required this.icon,
+    required this.title,
+    required this.actionLabel,
+    required this.onAction,
+    this.subtitle,
+  });
+
+  final Color background;
+  final Color foreground;
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final String actionLabel;
+  final VoidCallback onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = context.text;
+    return AppCard(
+      color: background,
+      padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+      child: Row(
+        children: [
+          Icon(icon, color: foreground),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: text.titleSmall?.copyWith(color: foreground),
+                ),
+                if (subtitle != null && subtitle!.isNotEmpty)
+                  Text(
+                    subtitle!,
+                    style: text.bodySmall?.copyWith(color: foreground),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: onAction,
+            style: TextButton.styleFrom(foregroundColor: foreground),
+            child: Text(actionLabel),
           ),
         ],
       ),
-      child: TextField(
-        decoration: InputDecoration(
-          filled: true,
-          hintText: 'Ketik Disini...',
-          hintStyle: TextStyle(
-            color: const Color.fromARGB(122, 112, 112, 112),
-            fontSize: 14,
-          ),
-          fillColor: Colors.white10,
-          contentPadding: EdgeInsets.all(15),
-          prefixIcon: Padding(
-            padding: const EdgeInsets.all(12),
-            child: SvgPicture.asset('asset/icons/Search.svg'),
-          ),
-          suffixIcon: Container(
-            width: 100,
-            child: IntrinsicHeight(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  VerticalDivider(
-                    color: const Color.fromARGB(75, 0, 0, 0),
-                    thickness: 1,
-                    endIndent: 10,
-                    indent: 10,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: SvgPicture.asset('asset/icons/Filter.svg'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
-        ),
-      ),
-    );
-  }
-
-  AppBar topBar() {
-    return AppBar(
-      title: Text(
-        'HISTORY',
-        style: TextStyle(
-          color: const Color.fromARGB(255, 16, 22, 27),
-          fontSize: 20,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-      centerTitle: true,
-      elevation: 0,
-      backgroundColor: const Color.fromARGB(255, 224, 250, 255),
-
-      leading: Container(
-        margin: EdgeInsets.all(10),
-        alignment: Alignment.center,
-        child: GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => BaseHome()),
-            );
-          },
-          child: SvgPicture.asset(
-            'asset/icons/Arrow - Left 2.svg',
-            width: 20,
-            height: 20,
-          ),
-        ),
-        decoration: BoxDecoration(
-          color: Color.fromARGB(0, 145, 35, 20),
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-      actions: [
-        GestureDetector(
-          child: Container(
-            margin: EdgeInsets.all(10),
-            width: 37,
-            alignment: Alignment.center,
-            child: SvgPicture.asset(
-              'asset/icons/dots.svg',
-              width: 5,
-              height: 5,
-            ),
-            decoration: BoxDecoration(
-              color: Color.fromARGB(0, 145, 35, 20),
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
